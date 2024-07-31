@@ -155,7 +155,7 @@ sudo systemctl daemon-reload
 	#split tunneling
 
 	until [[ -n "$VPC_RANGE" ]]; do
-		read -rp "type AWS_VPC_RANGE ex) 10.0.0.0 255.255.255.0 : " -e VPC_RANGE
+		read -rp "type AWS_VPC_RANGE ex) 10.0.0.0 255.255.0.0 : " -e VPC_RANGE
 	done
 
 	echo -e "push \"route $VPC_RANGE\"" >> /etc/openvpn/server.conf

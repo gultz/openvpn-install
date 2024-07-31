@@ -24,7 +24,12 @@ function initialCheck() {
 
 function installOpenVPN() {
     PORT=1194
+    #PROTOCOL
     PROTOCOL="udp"
+    #DNSresolver->수정해야함. 아래에 깔면 될듯
+    DNS=1
+
+    #CUSTOMIZE_ENC
     CIPHER="AES-128-GCM"
 	CERT_CURVE="prime256v1"
 	CC_CIPHER="TLS-ECDHE-ECDSA-WITH-AES-128-GCM-SHA256"
@@ -123,11 +128,13 @@ function installOpenVPN() {
     echo "port $PORT" >/etc/openvpn/server.conf
     echo "proto $PROTOCOL" >>/etc/openvpn/server.conf
 
-	#Split tunneling
+
 	until [[ -n "$VPC_RANGE" ]]; do
-		read -rp "type AWS_VPC_RANGE ex) 10.0.0.0 255.255.255.0 : " -e VPC_RANGE
+		read -rp "type AWS_VPC_RANGE ex) 10.0.0.0 255.255.0.0 : " -e VPC_RANGE
 	done
+
 	echo -e "push \"route $VPC_RANGE\"" >> /etc/openvpn/server.conf
+
 
     echo "dev tun
 user nobody
@@ -164,6 +171,7 @@ client-config-dir /etc/openvpn/ccd
 status /var/log/openvpn/status.log
 verb 3" >>/etc/openvpn/server.conf
 	
+
 	# Create client-config-dir dir
 	mkdir -p /etc/openvpn/ccd
 	# Create log dir
@@ -198,15 +206,15 @@ verb 3" >>/etc/openvpn/server.conf
 	# Add iptables rules in two scripts
 	mkdir -p /etc/iptables
 	echo "#!/bin/sh
-iptables -t nat -I POSTROUTING 1 -s 10.8.0.0/24 -o $NIC -j MASQUERADE
+
+iptables -t nat -A POSTROUTING -o $NIC -j MASQUERADE
 iptables -I FORWARD 1 -i $NIC -o tun0 -j ACCEPT
 iptables -I FORWARD 1 -i tun0 -o $NIC -j ACCEPT
 iptables -I INPUT 1 -i $NIC -p $PROTOCOL --dport $PORT -j ACCEPT" >/etc/iptables/add-openvpn-rules.sh
 
 	# Script to remove rules
 	echo "#!/bin/sh
-iptables -t nat -D POSTROUTING -s 10.8.0.0/24 -o $NIC -j MASQUERADE
-iptables -D INPUT -i tun0 -j ACCEPT
+iptables -t nat -D POSTROUTING -o $NIC -j MASQUERADE
 iptables -D FORWARD -i $NIC -o tun0 -j ACCEPT
 iptables -D FORWARD -i tun0 -o $NIC -j ACCEPT
 iptables -D INPUT -i $NIC -p $PROTOCOL --dport $PORT -j ACCEPT" >/etc/iptables/rm-openvpn-rules.sh
