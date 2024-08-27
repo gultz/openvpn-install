@@ -117,7 +117,7 @@ EOF
 		NOGROUP=nobody
 	fi
 
-    # Install the latest version of easy-rsa from source, if not already installed.
+    # Install the latest version x`x`of easy-rsa from source, if not already installed.
 	if [[ ! -d /etc/openvpn/easy-rsa/ ]]; then 
         local version="3.1.2"
         wget -O ~/easy-rsa.tgz https://github.com/OpenVPN/easy-rsa/releases/download/v${version}/EasyRSA-${version}.tgz
@@ -162,6 +162,22 @@ EOF
     echo "proto $PROTOCOL" >>/etc/openvpn/server.conf
 
 
+	 For Amazon Linux 2023, create /etc/systemd/system/openvpn@.service.
+	if [[ $OS == 'amzn'&& $VERSION_ID == "2023" ]]; then
+		echo "[Unit]
+Description=OpenVPN Robust And Highly Flexible Tunneling Application On %I
+After=network.target
+[Service]
+Type=notify
+PrivateTmp=true
+ExecStart=/usr/sbin/openvpn --cd /etc/openvpn/ --config %i.conf
+[Install]
+WantedBy=multi-user.target" >/usr/lib/systemd/system/openvpn@.service
+sudo systemctl daemon-reload
+fi
+
+
+
 	until [[ -n "$VPC_RANGE" ]]; do
 		read -rp "type AWS_VPC_RANGE ex) 10.0.0.0 255.255.0.0 : " -e VPC_RANGE
 	done
@@ -187,10 +203,9 @@ ifconfig-pool-persist ipp.txt" >>/etc/openvpn/server.conf
 	ip_array[3]=2  
 
 	NEW_IP="${ip_array[0]}.${ip_array[1]}.${ip_array[2]}.${ip_array[3]}"
-	echo 'push "dhcp-option DNS 8.8.8.8"' >>/etc/openvpn/server.conf
 
 
-	#echo "push \"dhcp-option DNS $NEW_IP\"" >> /etc/openvpn/server.conf
+	echo "push \"dhcp-option DNS $NEW_IP\"" >> /etc/openvpn/server.conf
 
 
 	echo "dh none" >>/etc/openvpn/server.conf
