@@ -180,13 +180,15 @@ server 10.8.0.0 255.255.255.0
 ifconfig-pool-persist ipp.txt" >>/etc/openvpn/server.conf
 
 
-	#echo 'push "redirect-gateway def bypass-dhcp"' >>/etc/openvpn/server.conf	
+	#echo 'push "redirect-gateway def bypass-dhcp"' >>/etc/openvpn/server.conf
 
 	#use AWS DNS 
-	#IFS='.' read -r -a ip_array <<< "$VPC_RANGE"
-	#ip_array[3]=2  # 마지막 숫자를 2로 설정
+	IFS='.' read -r -a ip_array <<< "$VPC_RANGE"
+	ip_array[3]=2  
 
-	#NEW_IP="${ip_array[0]}.${ip_array[1]}.${ip_array[2]}.${ip_array[3]}"
+	NEW_IP="${ip_array[0]}.${ip_array[1]}.${ip_array[2]}.${ip_array[3]}"
+	echo 'push "dhcp-option DNS 8.8.8.8"' >>/etc/openvpn/server.conf
+
 
 	#echo "push \"dhcp-option DNS $NEW_IP\"" >> /etc/openvpn/server.conf
 
