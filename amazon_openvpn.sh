@@ -41,8 +41,7 @@ function installOpenVPN() {
     PORT=1194
     #PROTOCOL
     PROTOCOL="udp"
-    #DNSresolver->수정해야함. 아래에 깔면 될듯
-    DNS=1
+   
 
     #CUSTOMIZE_ENC
     CIPHER="AES-128-GCM"
