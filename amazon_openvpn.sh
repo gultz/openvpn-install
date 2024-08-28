@@ -161,7 +161,7 @@ EOF
     echo "proto $PROTOCOL" >>/etc/openvpn/server.conf
 
 
-	 For Amazon Linux 2023, create /etc/systemd/system/openvpn@.service.
+	#For Amazon Linux 2023, create /etc/systemd/system/openvpn@.service.
 	if [[ $OS == 'amzn'&& $VERSION_ID == "2023" ]]; then
 		echo "[Unit]
 Description=OpenVPN Robust And Highly Flexible Tunneling Application On %I
