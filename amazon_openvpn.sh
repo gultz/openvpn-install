@@ -175,7 +175,7 @@ WantedBy=multi-user.target" >/usr/lib/systemd/system/openvpn@.service
 sudo systemctl daemon-reload
 fi
 
-
+	#Enable split tunneling 
 
 	until [[ -n "$VPC_RANGE" ]]; do
 		read -rp "type AWS_VPC_RANGE ex) 10.0.0.0 255.255.0.0 : " -e VPC_RANGE
@@ -197,7 +197,7 @@ ifconfig-pool-persist ipp.txt" >>/etc/openvpn/server.conf
 
 	#echo 'push "redirect-gateway def bypass-dhcp"' >>/etc/openvpn/server.conf
 
-	#use AWS DNS 
+	#Use AWS DNS 
 	IFS='.' read -r -a ip_array <<< "$VPC_RANGE"
 	ip_array[3]=2  
 
