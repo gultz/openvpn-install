@@ -178,7 +178,7 @@ fi
 	#Enable split tunneling 
 
 	until [[ -n "$VPC_RANGE" ]]; do
-		read -rp "type AWS_VPC_RANGE ex) 10.0.0.0 255.255.0.0 : " -e VPC_RANGE
+		read -rp "type AWS_VPC_RANGE ex) 10.0.0.0 255.255.0.0 : " -e -i "10.0.0.0 255.255.0.0" VPC_RANGE
 	done
 
 	echo -e "push \"route $VPC_RANGE\"" >> /etc/openvpn/server.conf
@@ -339,8 +339,8 @@ function newClient() {
 	echo "Tell me a name for the client."
 	echo "The name must consist of alphanumeric character. It may also include an underscore or a dash."
 
-	until [[ $CLIENT =~ ^[a-zA-Z0-9_-]+$ ]]; do
-		read -rp "Client name: " -e CLIENT
+	until [[ $CLIENT =~ ^[a-zA-Z0-9._-]+$ ]]; do
+		read -rp "Client name: " -e -i ndsvpn CLIENT
 	done
 
 	echo ""
@@ -417,7 +417,7 @@ function newClient() {
 
 	echo ""
 	echo "The configuration file has been written to $homeDir/$CLIENT.ovpn."
-	echo "Download the .ovpn file and import it in your OpenVPN client."
+	echo "Download the .ovpn file and import₩ it in your OpenVPN client."
 
 	exit 0
 }
