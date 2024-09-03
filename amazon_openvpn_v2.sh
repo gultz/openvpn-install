@@ -427,6 +427,21 @@ function revokeClient() {
 	echo "Tell me a name for the client."
 	echo "The name must consist of alphanumeric character. It may also include an underscore or a dash."
 
+
+	# remove linux user in vpnuser group
+		group_info=$(getent group vpnuser)
+		group_id=$(echo "$group_info" | cut -d: -f3)
+		users=$(getent passwd | awk -F: -v gid="$group_id" '$4 == gid {print $1}')
+		echo "vpnuser list :  "
+		echo "###############"
+		for user in $users; do
+  			echo "$user"
+		done
+		echo "###############"
+
+
+
+
 	until [[ $CLIENT =~ ^[a-zA-Z0-9._-]+$ ]]; do
 		read -rp "Client name: " -e -i ndsvpn CLIENT
 	done
