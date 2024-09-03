@@ -40,22 +40,17 @@ function checkOS(){
 function installOpenVPN() {
     PORT=1194
     PROTOCOL="udp"
-
     CIPHER="AES-128-GCM"
 	CERT_CURVE="prime256v1"
 	CC_CIPHER="TLS-ECDHE-ECDSA-WITH-AES-128-GCM-SHA256"
 	DH_CURVE="prime256v1"
 	HMAC_ALG="SHA256"
-	TLS_SIG="1" # tls-crypt
 
-    #PUBLIC IP
-
+    #PUBLIC IP by IMDSv2 aws
 	TOKEN=`curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600"`
 	PUBLIC_IP=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" -v http://169.254.169.254/latest/meta-data/public-ipv4)
 
     ENDPOINT=${ENDPOINT:-$PUBLIC_IP}
-
-	#private ip
 
     # Get the "public" interface from the default route
 	NIC=$(ip -4 route ls | grep default | grep -Po '(?<=dev )(\S+)' | head -1)
@@ -75,7 +70,6 @@ function installOpenVPN() {
 	fi
 
     ##Install Openvpn
-
     if [[ ! -e /etc/openvpn/server.conf ]]; then
         if [[ $VERSION_ID == "2023" ]]; then
 				# Add Fedora 36 repository because Amazon Linux 2023 is based on Fedora 34, 35, 36
@@ -189,13 +183,10 @@ ifconfig-pool-persist ipp.txt" >>/etc/openvpn/server.conf
 
 	#echo 'push "redirect-gateway def bypass-dhcp"' >>/etc/openvpn/server.conf
 
-	#Use AWS DNS
+	#Use AWS DNS not local dns server
 	IFS='.' read -r -a ip_array <<< "$VPC_RANGE"
 	ip_array[3]=2
-
 	NEW_IP="${ip_array[0]}.${ip_array[1]}.${ip_array[2]}.${ip_array[3]}"
-
-
 	echo "push \"dhcp-option DNS $NEW_IP\"" >> /etc/openvpn/server.conf
 
 	echo "dh none" >>/etc/openvpn/server.conf
@@ -221,10 +212,7 @@ echo "plugin /usr/lib64/openvpn/plugins/openvpn-plugin-auth-pam.so openvpn" >> /
 echo "auth    required        pam_unix.so    shadow    nodelay" > /etc/pam.d/openvpn
 echo "auth    requisite       pam_succeed_if.so uid >= 500 quiet" >> /etc/pam.d/openvpn
 echo "auth    requisite       pam_succeed_if.so user ingroup vpnuser quiet" >> /etc/pam.d/openvpn
-#echo "auth    required        pam_tally2.so deny=5 even_deny_root unlock_time=60" >> /etc/pam.d/openvpn
-#echo "account required        pam_tally2.so" >> /etc/pam.d/openvpn
 echo "account required        pam_unix.so" >> /etc/pam.d/openvpn
-
 
 	# Create client-config-dir dir
 	mkdir -p /etc/openvpn/ccd
@@ -316,9 +304,6 @@ ignore-unknown-option block-outside-dns
 setenv opt block-outside-dns # Prevent Windows 10 DNS leak
 verb 3" >>/etc/openvpn/client-template.txt
 
-	if [[ $COMPRESSION_ENABLED == "y" ]]; then
-		echo "compress $COMPRESSION_ALG" >>/etc/openvpn/client-template.txt
-	fi
 
     #Generate client
 
@@ -326,14 +311,15 @@ verb 3" >>/etc/openvpn/client-template.txt
 	echo "Tell me a name for the client."
 	echo "The name must consist of alphanumeric character. It may also include an underscore or a dash."
 
-    GROUP=ec2-user
-    OWNER=ec2-user
+    
 
 	until [[ $CLIENT =~ ^[a-zA-Z0-9._-]+$ ]]; do
 		read -rp "Client name: " -e -i ndsvpn CLIENT
 	done
 
     groupadd vpnuser
+	GROUP=ec2-user
+    OWNER=ec2-user
 
     USER_COUNT=2
     USERS[0]=$CLIENT
@@ -341,13 +327,13 @@ verb 3" >>/etc/openvpn/client-template.txt
 
 
     for (( i=0; i<$USER_COUNT; i++ )); do
-        # 사용자 추가
+        # add user
         useradd -g vpnuser -d /home/vpnuser/ -s /sbin/nologin "${USERS[$i]}"
 
-        # 비밀번호 생성
+        # create random password
         PASSWORDS[$i]=$(tr -dc 'a-zA-Z0-9' < /dev/urandom | fold -w 10 | head -n 1)
 
-        # 비밀번호 설정
+        # set password
         echo ${PASSWORDS[$i]} | passwd ${USERS[$i]} --stdin
     done
 
@@ -376,10 +362,6 @@ verb 3" >>/etc/openvpn/client-template.txt
 		homeDir="/root"
 	fi
 
-	# Determine if we use tls-auth or tls-crypt->삭제예정
-	if grep -qs "^tls-crypt" /etc/openvpn/server.conf; then
-		TLS_SIG="1"
-	fi
 
 	# Generates the custom client.ovpn
 	cp /etc/openvpn/client-template.txt "$homeDir/$CLIENT.ovpn"
@@ -400,22 +382,21 @@ verb 3" >>/etc/openvpn/client-template.txt
 		echo "<tls-crypt>"
 		cat /etc/openvpn/tls-crypt.key
 		echo "</tls-crypt>"
+
+		echo "remote-cert-tls server"
+		echo "auth-nocache"
+		echo "auth-user-pass"
+		echo "reneg-sec 84600"
+
 	}>>"$homeDir/$CLIENT.ovpn"
 
-    echo "remote-cert-tls server" >> $homeDir/$CLIENT.ovpn
-    echo "auth-nocache" >> $homeDir/$CLIENT.ovpn
-    echo "auth-user-pass" >> $homeDir/$CLIENT.ovpn
-    echo "reneg-sec 84600" >> $homeDir/$CLIENT.ovpn
-
-    chown $OWNER:$GROUP $homeDir/$CLIENT.ovpn
+	chown $OWNER:$GROUP $homeDir/$CLIENT.ovpn
 
 	echo ""
 	echo "The configuration file has been written to $homeDir/$CLIENT.ovpn."
-	echo "Download the .ovpn file and import₩ it in your OpenVPN client."
+	echo "Download the .ovpn file and import it in your OpenVPN client."
 	exit 0
 }
-
-
 
 function newClient() {
 	echo ""
@@ -442,8 +423,6 @@ function newClient() {
 }
 
 function revokeClient() {
-
-
 	echo ""
 	echo "Tell me a name for the client."
 	echo "The name must consist of alphanumeric character. It may also include an underscore or a dash."
@@ -470,28 +449,18 @@ function removeOpenVPN() {
 		PORT=$(grep '^port ' /etc/openvpn/server.conf | cut -d " " -f 2)
 		PROTOCOL=$(grep '^proto ' /etc/openvpn/server.conf | cut -d " " -f 2)
 
-		#remove linux user
-
-		# getent group vpnuser 명령어를 실행하고 결과를 가져옵니다.
+		# remove linux user in vpnuser group
 		group_info=$(getent group vpnuser)
-
-		# 그룹 정보에서 그룹 번호를 추출합니다.
 		group_id=$(echo "$group_info" | cut -d: -f3)
-
-		# 그룹 번호와 일치하는 사용자 목록을 가져옵니다.
 		users=$(getent passwd | awk -F: -v gid="$group_id" '$4 == gid {print $1}')
 
 		for user in $users; do
     		echo "delete User: $user"
 			userdel $user
-    	# 여기에 각 사용자에 대해 수행할 작업을 추가할 수 있습니다.
 		done
 
-		group del vpnuser
-		
-
+		groupdel vpnuser
 		rm -rf /home/vpnuser
-
 
 
 		# Stop OpenVPN
@@ -500,7 +469,6 @@ function removeOpenVPN() {
 			systemctl stop openvpn@server
 			# Remove customised service
 			rm /etc/systemd/system/openvpn\@.service
-
 
 		# Remove the iptables rules related to the script
 		systemctl stop iptables-openvpn
@@ -511,8 +479,6 @@ function removeOpenVPN() {
 		rm /etc/iptables/add-openvpn-rules.sh
 		rm /etc/iptables/rm-openvpn-rules.sh
 
-
-
 		yum remove -y openvpn
 
 		# Cleanup
@@ -522,7 +488,6 @@ function removeOpenVPN() {
 		rm -rf /usr/share/doc/openvpn*
 		rm -f /etc/sysctl.d/99-openvpn.conf
 		rm -rf /var/log/openvpn
-
 
 		echo ""
 		echo "OpenVPN removed!"
