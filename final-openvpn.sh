@@ -40,7 +40,7 @@ function checkOS(){
 function installOpenVPN() {
     PORT=1194
     PROTOCOL="udp"
-   
+
     CIPHER="AES-128-GCM"
 	CERT_CURVE="prime256v1"
 	CC_CIPHER="TLS-ECDHE-ECDSA-WITH-AES-128-GCM-SHA256"
@@ -48,10 +48,10 @@ function installOpenVPN() {
 	HMAC_ALG="SHA256"
 	TLS_SIG="1" # tls-crypt
 
-	
+
 
     #PUBLIC IP
-    
+
 	TOKEN=`curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600"`
 	PUBLIC_IP=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" -v http://169.254.169.254/latest/meta-data/public-ipv4)
 
@@ -61,7 +61,7 @@ function installOpenVPN() {
 
     # Get the "public" interface from the default route
 	NIC=$(ip -4 route ls | grep default | grep -Po '(?<=dev )(\S+)' | head -1)
-	
+
 
     # $NIC can not be empty for script rm-openvpn-rules.sh
 	if [[ -z $NIC ]]; then
@@ -92,8 +92,8 @@ gpgkey=https://getfedora.org/static/fedora.gpg
        https://src.fedoraproject.org/rpms/fedora-repos/raw/f36/f/RPM-GPG-KEY-fedora-36-primary
 skip_if_unavailable=False
 EOF
-        yum install -y iptables openssl wget ca-certificates			
-    	yum install -y openvpn pkcs11-helper --enablerepo=fedora 
+        yum install -y iptables openssl wget ca-certificates
+    	yum install -y openvpn pkcs11-helper --enablerepo=fedora
 			else
 				amazon-linux-extras install -y epel
 				yum install -y openvpn iptables openssl wget ca-certificates curl
@@ -103,7 +103,7 @@ EOF
 			rm -rf /etc/openvpn/easy-rsa/
 		fi
     fi
-    
+
     # Find out if the machine uses nogroup or nobody for the permissionless group
     if grep -qs "^nogroup:" /etc/group; then
 		NOGROUP=nogroup
@@ -112,7 +112,7 @@ EOF
 	fi
 
     # Install the latest version x`x`of easy-rsa from source, if not already installed.
-	if [[ ! -d /etc/openvpn/easy-rsa/ ]]; then 
+	if [[ ! -d /etc/openvpn/easy-rsa/ ]]; then
         local version="3.1.2"
         wget -O ~/easy-rsa.tgz https://github.com/OpenVPN/easy-rsa/releases/download/v${version}/EasyRSA-${version}.tgz
 		mkdir -p /etc/openvpn/easy-rsa
@@ -139,13 +139,13 @@ EOF
 
         #generate tls-crypt key
         openvpn --genkey --secret /etc/openvpn/tls-crypt.key
-    else 
+    else
         #if easy-rsa is already installed. grab the generated SERVER_NAME
 
         cd etc/openvpn/easy-rsa/ || return
         SERVER_NAME=$(cat SERVER_NAME_GENERATED)
     fi
-    
+
     # Move all the generated files
 	cp pki/ca.crt pki/private/ca.key "pki/issued/$SERVER_NAME.crt" "pki/private/$SERVER_NAME.key" /etc/openvpn/easy-rsa/pki/crl.pem /etc/openvpn
 
@@ -170,7 +170,7 @@ WantedBy=multi-user.target" >/usr/lib/systemd/system/openvpn@.service
 sudo systemctl daemon-reload
 fi
 
-	#Enable split tunneling 
+	#Enable split tunneling
 
 	until [[ -n "$VPC_RANGE" ]]; do
 		read -rp "type AWS_VPC_RANGE ex) 10.0.0.0 255.255.0.0 : " -e -i "10.0.0.0 255.255.0.0" VPC_RANGE
@@ -191,9 +191,9 @@ ifconfig-pool-persist ipp.txt" >>/etc/openvpn/server.conf
 
 	#echo 'push "redirect-gateway def bypass-dhcp"' >>/etc/openvpn/server.conf
 
-	#Use AWS DNS 
+	#Use AWS DNS
 	IFS='.' read -r -a ip_array <<< "$VPC_RANGE"
-	ip_array[3]=2  
+	ip_array[3]=2
 
 	NEW_IP="${ip_array[0]}.${ip_array[1]}.${ip_array[2]}.${ip_array[3]}"
 
@@ -345,10 +345,10 @@ verb 3" >>/etc/openvpn/client-template.txt
     for (( i=0; i<$USER_COUNT; i++ )); do
         # 사용자 추가
         useradd -g vpnuser -d /home/vpnuser/ -s /sbin/nologin "${USERS[$i]}"
-    
+
         # 비밀번호 생성
         PASSWORDS[$i]=$(tr -dc 'a-zA-Z0-9' < /dev/urandom | fold -w 10 | head -n 1)
-    
+
         # 비밀번호 설정
         echo ${PASSWORDS[$i]} | passwd ${USERS[$i]} --stdin
     done
@@ -398,10 +398,10 @@ verb 3" >>/etc/openvpn/client-template.txt
 		cat "/etc/openvpn/easy-rsa/pki/private/$CLIENT.key"
 		echo "</key>"
 
-		
+
 		echo "<tls-crypt>"
 		cat /etc/openvpn/tls-crypt.key
-		echo "</tls-crypt>
+		echo "</tls-crypt>"
 	}>>"$homeDir/$CLIENT.ovpn"
 
     echo "remote-cert-tls server" >> $homeDir/$CLIENT.ovpn
@@ -465,8 +465,8 @@ function newClient() {
 
     echo "If you want to add more clients, you simply need to run this script another time!"
 
-	
-	
+
+
 }
 
 function revokeClient() {
@@ -513,12 +513,12 @@ function removeOpenVPN() {
 		PROTOCOL=$(grep '^proto ' /etc/openvpn/server.conf | cut -d " " -f 2)
 
 		# Stop OpenVPN
-	
+
 			systemctl disable openvpn@server
 			systemctl stop openvpn@server
 			# Remove customised service
 			rm /etc/systemd/system/openvpn\@.service
-		
+
 
 		# Remove the iptables rules related to the script
 		systemctl stop iptables-openvpn
@@ -530,9 +530,9 @@ function removeOpenVPN() {
 		rm /etc/iptables/rm-openvpn-rules.sh
 
 
-	
+
 		yum remove -y openvpn
-	
+
 		# Cleanup
 		find /home/ -maxdepth 2 -name "*.ovpn" -delete
 		find /root/ -maxdepth 1 -name "*.ovpn" -delete
@@ -541,7 +541,7 @@ function removeOpenVPN() {
 		rm -f /etc/sysctl.d/99-openvpn.conf
 		rm -rf /var/log/openvpn
 
-		
+
 		echo ""
 		echo "OpenVPN removed!"
 	else
