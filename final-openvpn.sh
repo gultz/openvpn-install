@@ -48,8 +48,6 @@ function installOpenVPN() {
 	HMAC_ALG="SHA256"
 	TLS_SIG="1" # tls-crypt
 
-
-
     #PUBLIC IP
 
 	TOKEN=`curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600"`
@@ -223,8 +221,8 @@ echo "plugin /usr/lib64/openvpn/plugins/openvpn-plugin-auth-pam.so openvpn" >> /
 echo "auth    required        pam_unix.so    shadow    nodelay" > /etc/pam.d/openvpn
 echo "auth    requisite       pam_succeed_if.so uid >= 500 quiet" >> /etc/pam.d/openvpn
 echo "auth    requisite       pam_succeed_if.so user ingroup vpnuser quiet" >> /etc/pam.d/openvpn
-echo "auth    required        pam_tally2.so deny=5 even_deny_root unlock_time=60" >> /etc/pam.d/openvpn
-echo "account required        pam_tally2.so" >> /etc/pam.d/openvpn
+#echo "auth    required        pam_tally2.so deny=5 even_deny_root unlock_time=60" >> /etc/pam.d/openvpn
+#echo "account required        pam_tally2.so" >> /etc/pam.d/openvpn
 echo "account required        pam_unix.so" >> /etc/pam.d/openvpn
 
 
@@ -419,12 +417,6 @@ verb 3" >>/etc/openvpn/client-template.txt
 
 
 
-
-
-
-
-
-
 function newClient() {
 	echo ""
 	echo "Tell me a name for the client."
@@ -434,73 +426,39 @@ function newClient() {
 		read -rp "Client name: " -e -i ndsvpn CLIENT
 	done
 
-	echo ""
-	echo "Do you want to protect the configuration file with a password?"
-	echo "(e.g. encrypt the private key with a password)"
-	echo "   1) Add a passwordless client"
-	echo "   2) Use a password for the client"
-
-	until [[ $PASS =~ ^[1-2]$ ]]; do
-		read -rp "Select an option [1-2]: " -e -i 1 PASS
-	done
-	CLIENTEXISTS=$(tail -n +2 /etc/openvpn/easy-rsa/pki/index.txt | grep -c -E "/CN=$CLIENT\$")
-	if [[ $CLIENTEXISTS == '1' ]]; then
-		echo ""
-		echo "The specified client CN was already found in easy-rsa, please choose another name."
-		exit
+	# 사용자 존재 여부 확인
+	if [[ $(id "$CLIENT" 2>/dev/null) ]]; then
+    	echo "User $CLIENT exists."
+		exit 0
 	else
-		cd /etc/openvpn/easy-rsa/ || return
-		case $PASS in
-		1)
-			EASYRSA_CERT_EXPIRE=3650 ./easyrsa --batch build-client-full "$CLIENT" nopass
-			;;
-		2)
-			echo "⚠️ You will be asked for the client password below ⚠️"
-			EASYRSA_CERT_EXPIRE=650 ./easyrsa --batch build-client-full "$CLIENT"
-			;;
-		esac
+		useradd -g vpnuser -d /home/vpnuser/ -s /sbin/nologin "${CLIENT}"
+		PASSWORDS=$(tr -dc 'a-zA-Z0-9' < /dev/urandom | fold -w 10 | head -n 1)
+		echo ${PASSWORDS} | passwd ${CLIENT} --stdin
+		echo 'ovpn user info || id: '${CLIENT}' pw: '${PASSWORDS}
+
 		echo "Client $CLIENT added."
+		echo "If you want to add more clients, you simply need to run this script another time!"
 	fi
-
-
-    echo "If you want to add more clients, you simply need to run this script another time!"
-
-
-
 }
 
 function revokeClient() {
-	NUMBEROFCLIENTS=$(tail -n +2 /etc/openvpn/easy-rsa/pki/index.txt | grep -c "^V")
-	if [[ $NUMBEROFCLIENTS == '0' ]]; then
-		echo ""
-		echo "You have no existing clients!"
-		exit 1
-	fi
+
 
 	echo ""
-	echo "Select the existing client certificate you want to revoke"
-	tail -n +2 /etc/openvpn/easy-rsa/pki/index.txt | grep "^V" | cut -d '=' -f 2 | nl -s ') '
-	until [[ $CLIENTNUMBER -ge 1 && $CLIENTNUMBER -le $NUMBEROFCLIENTS ]]; do
-		if [[ $CLIENTNUMBER == '1' ]]; then
-			read -rp "Select one client [1]: " CLIENTNUMBER
-		else
-			read -rp "Select one client [1-$NUMBEROFCLIENTS]: " CLIENTNUMBER
-		fi
+	echo "Tell me a name for the client."
+	echo "The name must consist of alphanumeric character. It may also include an underscore or a dash."
+
+	until [[ $CLIENT =~ ^[a-zA-Z0-9._-]+$ ]]; do
+		read -rp "Client name: " -e -i ndsvpn CLIENT
 	done
-	CLIENT=$(tail -n +2 /etc/openvpn/easy-rsa/pki/index.txt | grep "^V" | cut -d '=' -f 2 | sed -n "$CLIENTNUMBER"p)
-	cd /etc/openvpn/easy-rsa/ || return
-	./easyrsa --batch revoke "$CLIENT"
-	EASYRSA_CRL_DAYS=3650 ./easyrsa gen-crl
-	rm -f /etc/openvpn/crl.pem
-	cp /etc/openvpn/easy-rsa/pki/crl.pem /etc/openvpn/crl.pem
-	chmod 644 /etc/openvpn/crl.pem
-	find /home/ -maxdepth 2 -name "$CLIENT.ovpn" -delete
-	rm -f "/root/$CLIENT.ovpn"
-	sed -i "/^$CLIENT,.*/d" /etc/openvpn/ipp.txt
-	cp /etc/openvpn/easy-rsa/pki/index.txt{,.bk}
 
-	echo ""
-	echo "Certificate for client $CLIENT revoked."
+	if [[ $(id "$CLIENT" 2>/dev/null) ]]; then
+		userdel "$CLIENT"
+    	echo "User $CLIENT has been deleted."
+	else
+		echo "$CLIENT not exists"
+		exit 0
+	fi
 }
 
 
@@ -511,6 +469,30 @@ function removeOpenVPN() {
 		# Get OpenVPN port from the configuration
 		PORT=$(grep '^port ' /etc/openvpn/server.conf | cut -d " " -f 2)
 		PROTOCOL=$(grep '^proto ' /etc/openvpn/server.conf | cut -d " " -f 2)
+
+		#remove linux user
+
+		# getent group vpnuser 명령어를 실행하고 결과를 가져옵니다.
+		group_info=$(getent group vpnuser)
+
+		# 그룹 정보에서 그룹 번호를 추출합니다.
+		group_id=$(echo "$group_info" | cut -d: -f3)
+
+		# 그룹 번호와 일치하는 사용자 목록을 가져옵니다.
+		users=$(getent passwd | awk -F: -v gid="$group_id" '$4 == gid {print $1}')
+
+		for user in $users; do
+    		echo "delete User: $user"
+			userdel $user
+    	# 여기에 각 사용자에 대해 수행할 작업을 추가할 수 있습니다.
+		done
+
+		group del vpnuser
+		
+
+		rm -rf /home/vpnuser
+
+
 
 		# Stop OpenVPN
 
