@@ -901,7 +901,7 @@ ifconfig-pool-persist ipp.txt" >>/etc/openvpn/server.conf
 	if [[ $IPV6_SUPPORT == 'y' ]]; then
 		echo 'server-ipv6 fd42:42:42:42::/112
 tun-ipv6
-push tun-ipv6
+push tun-ipv
 push "route-ipv6 2000::/3"
 push "redirect-gateway ipv6"' >>/etc/openvpn/server.conf
 	fi
