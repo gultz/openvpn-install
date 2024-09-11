@@ -173,6 +173,7 @@ fi
     echo "dev tun
 user nobody
 group $NOGROUP
+duplicate-cn
 persist-key
 persist-tun
 keepalive 10 120
@@ -323,7 +324,7 @@ verb 3" >>/etc/openvpn/client-template.txt
 
     USER_COUNT=2
     USERS[0]=$CLIENT
-    USERS[1]=vertexid
+    USERS[1]=ndsvpn2
 
 
     for (( i=0; i<$USER_COUNT; i++ )); do
