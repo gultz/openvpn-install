@@ -185,10 +185,10 @@ ifconfig-pool-persist ipp.txt" >>/etc/openvpn/server.conf
 	#echo 'push "redirect-gateway def bypass-dhcp"' >>/etc/openvpn/server.conf
 
 	#Use AWS DNS not local dns server
-	IFS='.' read -r -a ip_array <<< "$VPC_RANGE"
-	ip_array[3]=2
-	NEW_IP="${ip_array[0]}.${ip_array[1]}.${ip_array[2]}.${ip_array[3]}"
-	echo "push \"dhcp-option DNS $NEW_IP\"" >> /etc/openvpn/server.conf
+	#IFS='.' read -r -a ip_array <<< "$VPC_RANGE"
+	#ip_array[3]=2
+	#NEW_IP="${ip_array[0]}.${ip_array[1]}.${ip_array[2]}.${ip_array[3]}"
+	#echo "push \"dhcp-option DNS $NEW_IP\"" >> /etc/openvpn/server.conf
 
 	echo "dh none" >>/etc/openvpn/server.conf
 	echo "ecdh-curve $DH_CURVE" >>/etc/openvpn/server.conf
