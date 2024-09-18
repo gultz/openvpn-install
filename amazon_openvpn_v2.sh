@@ -313,7 +313,7 @@ verb 3" >>/etc/openvpn/client-template.txt
     
 
 	until [[ $CLIENT =~ ^[a-zA-Z0-9._-]+$ ]]; do
-		read -rp "Client name: " -e -i ndsvpn CLIENT
+		read -rp "Client name: " -e -i defaultVPNClient CLIENT
 	done
 
     groupadd vpnuser
@@ -322,7 +322,7 @@ verb 3" >>/etc/openvpn/client-template.txt
 
     USER_COUNT=2
     USERS[0]=$CLIENT
-    USERS[1]=ndsvpn2
+    USERS[1]=defaultVPNClient2
 
 
     for (( i=0; i<$USER_COUNT; i++ )); do
