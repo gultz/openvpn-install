@@ -1,44 +1,47 @@
-# OpenVPN installer for Amazon Linux2, Amazon linux 2023
-
-Compatibility
-
-The script supports these Linux distributions:
 
 
+# OpenVPN Installer for Amazon Linux 2 and Amazon Linux 2023
 
-support
+## Problem Description
 
-amazon-linux-2023
+The script needs modification to include support for the Amazon Linux 2023 configuration. Without this update, users cannot utilize the script with the latest Amazon Linux settings.
 
-✅      
+## Proposed Solution
 
-amazon-linux-2
+Update the script to recognize and handle the Amazon Linux 2023 configuration properly. Since Amazon Linux 2023 is based on Fedora 34, 35, and 36, modify the script to install OpenVPN from the corresponding Fedora packages. I have verified that OpenVPN works correctly when installed from these Fedora packages on Amazon Linux 2023. Additionally, since Amazon Linux 2023 does not support Extra Packages for Enterprise Linux (EPEL), the repository needs to be added manually.
 
-✅      
+## Relationship to Fedora
 
-특이사항
+For more information on the relationship between Amazon Linux 2023 and Fedora, refer to the following documentation:
 
-amazon linux 2023은 현재 epel을 지원하지 않음. 따라서 amazon linux 2023에서 epel을 통해 openvpn을 받아 올 수 없으며, 다른 저장소를 임의적으로 추가하여 openvpn을 설치해야함.
+- [Relationship to Fedora](https://docs.aws.amazon.com/linux/al2023/ug/relationship-to-fedora.html)
+- [Comparison with Amazon Linux 2](https://docs.aws.amazon.com/linux/al2023/ug/compare-with-al2.html)
 
-amazon linux 2023은 fedora 34,35,36 기반으로 만들어져있음으로 fedora 저장소를 추가하고 그쪽에서 openvpn을 설치하여 dependency 문제를 해결.
+## Linux Distribution and Version
 
+- **Amazon Linux 2023**
 
-Usage
+## OpenVPN Version
 
+- **2.56**
 
-소스 대상 확인 중지 필수 (NAT)
+## Compatibility
 
-기존의 openvpn과 모든 기능 동일
+The script supports the following Linux distributions:
 
-vpc range를 꼭 적어줘야하며, default 10.0.0.0 255.255.0.0
+- **Amazon Linux 2023**
+- **Amazon Linux 2**
 
+## Usage
 
-amazon
+Before using the script, ensure the **Source/Destination Check** is disabled when configuring NAT.
 
-wget https://media.cloud.nongshim.co.kr/ndsutils/openvpn/amazon_openvpn_v2.sh
+```bash
+git clone https://github.com/gultz/openvpn-install.git
 sudo -s
 chmod +x amazon_openvpn_v2.sh
 ./amazon_openvpn_v2.sh
+```
 
-vpc대역대 입력 ex 172.30.0.0 255.255.0.0 
+--- 
 
