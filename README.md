@@ -32,6 +32,17 @@ The script supports the following Linux distributions:
 - **Amazon Linux 2023**
 - **Amazon Linux 2**
 
+
+## Changes 
+
+- Support Amazon Linux 2023
+- dulpicate cn -> Added the duplicate-cn option. This will allow multiple clients using the same certificate or username to connect concurrently
+- Local DNS -> Using Local DNS not public known DNS (8.8.8.8)
+- enable Linux User certificate
+- split tunneling
+- Use IMVDBSv2
+  
+
 ## Usage
 
 Before using the script, ensure the **Source/Destination Check** is disabled when configuring NAT.
