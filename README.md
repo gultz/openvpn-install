@@ -29,8 +29,10 @@ For more information on the relationship between Amazon Linux 2023 and Fedora, r
 
 The script supports the following Linux distributions:
 
-- **Amazon Linux 2023**
-- **Amazon Linux 2**
+|                    | Support |
+| ------------------ | ------- |
+| Amaozon Linux 2023 | ✅      |
+| Amazon Linux 2     | ✅      |
 
 
 ## Changes 
