@@ -80,8 +80,7 @@ baseurl=https://archives.fedoraproject.org/pub/archive/fedora/linux/releases/36/
 enabled=1
 metadata_expire=7d
 gpgcheck=1
-gpgkey=https://getfedora.org/static/fedora.gpg
-       https://src.fedoraproject.org/rpms/fedora-repos/raw/f36/f/RPM-GPG-KEY-fedora-36-primary
+gpgkey=https://src.fedoraproject.org/rpms/fedora-repos/raw/f36/f/RPM-GPG-KEY-fedora-36-primary
 skip_if_unavailable=False
 EOF
         yum install -y iptables openssl wget ca-certificates
