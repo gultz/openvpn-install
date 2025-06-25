@@ -205,6 +205,7 @@ tls-version-min 1.2
 tls-cipher $CC_CIPHER
 client-config-dir /etc/openvpn/ccd
 status /var/log/openvpn/status.log
+reneg-sec 84600
 verb 3" >>/etc/openvpn/server.conf
 
 #user/pass 를 이용한 인증에는 추가 필요 - START
